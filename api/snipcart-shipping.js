@@ -4,32 +4,21 @@ export default async function handler(req, res) {
   const body = req.body || {};
   const items = (body.content && body.content.items) || [];
 
-  const hasPickupOnlyItem = items.some(i => i.shippable === false);
-  const hasShippableItem = items.some(i => i.shippable === true);
-
-  // Scenario 1: Alleen non-shippable items
-  if (hasPickupOnlyItem && !hasShippableItem) {
+  // Als er minstens één pickup-only item aanwezig is, laat alleen pickup-optie toe
+  const hasPickupOnlyItem = items.some(item => item.shippable === false);
+  if (hasPickupOnlyItem) {
     return res.status(200).json({
-      rates: [{
-        cost: 0,
-        description: "Afhalen in de winkel (Markt 16, Oedelem)",
-        userDefinedId: "pickup_store"
-      }]
+      rates: [
+        {
+          cost: 0,
+          description: "Afhalen in de winkel (Markt 16, Oedelem)",
+          userDefinedId: "pickup_only"
+        }
+      ]
     });
   }
 
-  // Scenario 2: Mix van pickup + shippable items
-  if (hasPickupOnlyItem && hasShippableItem) {
-    return res.status(200).json({
-      rates: [{
-        cost: 0,
-        description: "Afhalen in de winkel (Markt 16, Oedelem) — geen levering mogelijk",
-        userDefinedId: "pickup_store_only"
-      }]
-    });
-  }
-
-  // Scenario 3: Alleen shippable items
+  // Anders: reguliere verzendopties
   return res.status(200).json({
     rates: [
       { cost: 6.95, description: "Standaard levering (2-3 dagen)", userDefinedId: "shipping_standard" },
